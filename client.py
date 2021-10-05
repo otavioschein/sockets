@@ -7,9 +7,9 @@ ADDR = (SERVER, PORT)
 FORMAT = "utf-8"
 DISCONNECT_MESSAGE = "!DISCONNECT"
 
-commands = "\n/exit -> sai do programa.\n" \
-           "/list -> lista usuários conectados.\n" \
-           "/key -> comandos possíveis.\n"
+commands = "\n/exit -> exit program.\n" \
+           "/list -> list connected users.\n" \
+           "/key -> commands.\n"
 
 
 def connect():
@@ -24,7 +24,9 @@ def send(client, msg):
 
 
 def start():
-    answer_username = input('Enter your name: ')
+    print('===== WELCOME TO THE CHAT =====\n'
+          'Type /key for help. Be polite and enjoy!')
+    answer_username = input('\nEnter your name: ')
 
     connection = connect()
     send(connection, answer_username)
@@ -39,6 +41,13 @@ def start():
             break
 
         send(connection, message)
+        msg_ban = connection.recv(1024).decode(FORMAT)
+
+        if msg_ban == "BANNED":
+            print("You are banned from the server for 10 seconds!")
+            send(connection, "User is banned for 10 seconds!")
+            time.sleep(10)
+            continue
 
     send(connection, "DISCONNECTED")
     time.sleep(1)

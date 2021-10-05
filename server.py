@@ -2,7 +2,7 @@ import threading
 import socket
 
 PORT = 5051
-SERVER = "127.0.0.1"
+SERVER = "localhost"
 ADDR = (SERVER, PORT)
 FORMAT = "utf-8"
 
@@ -12,6 +12,7 @@ server.bind(ADDR)
 clients = set()
 clients_lock = threading.Lock()
 users_connected = []
+dirty_words = ["fuck", "shit", "cock", "pussy"]
 
 
 def handle_client(conn, addr):
@@ -32,6 +33,9 @@ def handle_client(conn, addr):
 
             print(f"{user_connected}: {msg}")
 
+            if any(word in msg for word in dirty_words):
+                conn.send("BANNED".encode(FORMAT))
+
             if msg == '/list':
                 print("\nUsers connected to the server:")
                 for uc in users_connected:
@@ -49,7 +53,7 @@ def handle_client(conn, addr):
 
 
 def start():
-    print('[SERVER STARTED]!')
+    print('[SERVER STARTED] ===== THE CHAT =====')
     server.listen()
     while True:
         conn, addr = server.accept()
