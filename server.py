@@ -31,10 +31,11 @@ def handle_client(conn, addr):
                 users_connected.remove(user_connected)
                 connected = False
 
-            print(f"{user_connected}: {msg}")
-
             if any(word in msg for word in dirty_words):
                 conn.send("BANNED".encode(FORMAT))
+                continue
+
+            print(f"{user_connected}: {msg}")
 
             if msg == '/list':
                 print("\nUsers connected to the server:")
@@ -56,6 +57,7 @@ def start():
     print('[SERVER STARTED] ===== THE CHAT =====')
     server.listen()
     while True:
+        # espera por uma nova conexão
         conn, addr = server.accept()
         with clients_lock:
             clients.add(conn)

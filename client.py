@@ -31,7 +31,7 @@ def start():
     connection = connect()
     send(connection, answer_username)
     while True:
-        message = input()
+        message = input("-> ")
 
         if message == '/key':
             print(commands)
@@ -41,13 +41,11 @@ def start():
             break
 
         send(connection, message)
-        msg_ban = connection.recv(1024).decode(FORMAT)
 
-        if msg_ban == "BANNED":
+        if connection.recv(1024).decode(FORMAT) == "BANNED":
             print("You are banned from the server for 10 seconds!")
             send(connection, "User is banned for 10 seconds!")
             time.sleep(10)
-            continue
 
     send(connection, "DISCONNECTED")
     time.sleep(1)
