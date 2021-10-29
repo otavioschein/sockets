@@ -9,17 +9,25 @@ FORMAT = "utf-8"
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDR)
 
-clients = set()
+clients = []
 clients_lock = threading.Lock()
 users_connected = []
-dirty_words = ["fuck", "shit", "cock", "pussy"]
 
 
-def handle_client(conn, addr):
-    user_connected = conn.recv(1024).decode(FORMAT)
-    users_connected.append(user_connected)
-    print(f"[NEW CONNECTION] {user_connected} Connected")
+def handle_global_message(username, message):
+    for c in clients:
+        c.sendall(f"{username}: {message}".encode(FORMAT))
 
+
+def handle_list_command(username):
+    string = "\nUsers connected: "
+    for uc in users_connected:
+        string += ''.join(f"\n      - {uc}")
+    # conn.send(string.encode(FORMAT))
+    handle_global_message(username, string)
+
+
+def handle_message(conn, addr, username):
     try:
         connected = True
         while connected:
@@ -28,27 +36,20 @@ def handle_client(conn, addr):
                 break
 
             if msg == "DISCONNECTED":
-                users_connected.remove(user_connected)
                 connected = False
 
-            if any(word in msg for word in dirty_words):
-                conn.send("BANNED".encode(FORMAT))
-                continue
-
-            print(f"{user_connected}: {msg}")
-
             if msg == '/list':
-                print("\nUsers connected to the server:")
-                for uc in users_connected:
-                    print(f"    - {uc}")
+                handle_list_command(username)
+
+            print(f'{username}: {msg}')
 
             with clients_lock:
-                for c in clients:
-                    c.sendall(f"{user_connected}: {msg}".encode(FORMAT))
+                handle_global_message(username, msg)
 
     finally:
         with clients_lock:
             clients.remove(conn)
+            users_connected.remove(username)
 
         conn.close()
 
@@ -60,9 +61,13 @@ def start():
         # espera por uma nova conexão
         conn, addr = server.accept()
         with clients_lock:
-            clients.add(conn)
-        thread = threading.Thread(target=handle_client, args=(conn, addr))
-        thread.start()
+            clients.append(conn)
+        conn.send('get_username'.encode(FORMAT))
+        username = conn.recv(1024).decode(FORMAT)
+        users_connected.append(username)
+        handle_global_message(username, f"[NEW CONNECTION] {username} Connected.\n")
+        thread_message = threading.Thread(target=handle_message, args=(conn, addr, username))
+        thread_message.start()
 
 
 start()
